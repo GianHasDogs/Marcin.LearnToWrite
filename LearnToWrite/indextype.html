@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Flashcard writing</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+		body {
+			background-color: #ffffff;
+			font-family: Arial, sans-serif;
+			margin: 0;
+			padding: 0;
+		}
+		h1 {
+			background-color: #444444;
+			color: white;
+			margin: 0;
+			padding: 20px;
+			text-align: center;
+		}
+		label {
+			display: block;
+			font-size: 20px;
+			font-weight: bold;
+			margin: 20px 0;
+		}
+		input[type=file] {
+			display: block;
+			margin: 20px 0;
+		}
+		.container {
+			margin: 0 auto;
+			max-width: 800px;
+			padding: 20px;
+		}
+		.question {
+			background-color: #ffffff;
+			border: 1px solid #444444;
+			border-radius: 5px;
+            font-size: 16px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+			margin: 20px 0;
+			padding: 20px;
+			text-align: center;
+		}
+		input[type=text] {
+			border: 1px solid #444444;
+			border-radius: 5px;
+			font-size: 16px;
+			margin: 10px 0;
+			padding: 10px;
+			width: 100%;
+		}
+		.answer-container {
+			display: none;
+		}
+		button {
+			background-color: #b8b8b8;
+			border: none;
+			border-radius: 5px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+			color: rgb(0, 0, 0);
+			cursor: pointer;
+			font-size: 16px;
+			margin: 10px;
+			padding: 10px 20px;
+			text-align: center;
+			text-decoration: none;
+			transition: background-color 0.3s;
+		}
+		button:hover {
+			background-color: #333333;
+		}
+	</style>
+</head>
+<body>
+	<h1>Excel Table Q & A Check Version 01.05.</h1>
+
+	<div>
+		<label for="file-input">Choose a file:</label>
+		<input type="file" id="file-input" accept=".xlsx,.xls,.csv">
+	</div>
+
+	<div id="question-container">
+		<!-- Questions will be added here dynamically -->
+	</div>
+
+	<div id="answer-container" style="display: none;">
+		<!-- Answer input field will be added here dynamically -->
+	</div>
+
+	<div>
+		<button onclick="showAnswer()">Show Answer</button>
+		<button onclick="checkAnswer()">Check Answer</button>
+		<button onclick="nextQuestion()">Next Question</button>
+	</div>
+
+    <img src="ChadFrenchmeme.png" alt="ChadFrenchmeme">
+    <p>by @Marcin</p>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.8/xlsx.full.min.js"></script>
+	<script>
+		let questions = [];
+		let answers = [];
+		let currentQuestion = 0;
+
+		function handleFile(e) {
+			const files = e.target.files;
+			if (files.length == 0) return;
+			const file = files[0];
+
+			const reader = new FileReader();
+			reader.readAsBinaryString(file);
+			reader.onload = function(e) {
+				const data = e.target.result;
+				const workbook = XLSX.read(data, { type: 'binary' });
+				const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+				questions = [];
+				answers = [];
+
+				for (let i = 1; ; i++) {
+					const question = sheet[`C${i}`];
+					const answer = sheet[`A${i}`];
+					if (!question || !answer) break;
+					questions.push(question.v);
+					answers.push(answer.v);
+				}
+
+				showQuestion();
+			};
+		}
+
+		function showQuestion() {
+			const questionContainer = document.getElementById('question-container');
+			const answerContainer = document.getElementById('answer-container');
+
+			questionContainer.innerHTML = questions[currentQuestion];
+			answerContainer.innerHTML = `
+				<label for="answer-input">Answer:</label>
+				<input type="text" id="answer-input">
+			`;
+
+			answerContainer.style.display = 'block';
+
+            document.getElementById('answer-input').focus();
+			document.getElementById('answer-input').addEventListener('keyup', function(event) {
+				event.preventDefault();
+				if (event.keyCode === 13) {
+					document.getElementById('answer-input').click();
+				}
+			});
+		}
+		
+
+		function showAnswer() {
+			const answerContainer = document.getElementById('answer-container');
+			answerContainer.innerHTML = `
+				<label for="answer-input">Answer:</label>
+				<input type="text" id="answer-input" value="${answers[currentQuestion]}">
+			`;
+
+			answerContainer.style.display = 'block';
+		}
+
+		function checkAnswer() {
+			const answerInput = document.getElementById('answer-input');
+			const answer = answerInput.value.trim().toLowerCase();
+			const correctAnswer = answers[currentQuestion].trim().toLowerCase();
+			if (answer === correctAnswer) {
+				alert('Correct!');
+			} else {
+				alert(`Incorrect. The correct answer is "${answers[currentQuestion]}".`);
+			}
+			answerInput.value = '';
+			answerInput.focus();
+		}
+
+		function nextQuestion() {
+			if (currentQuestion < questions.length - 1) {
+				currentQuestion++;
+			} else {
+				currentQuestion = 0;
+			}
+			showQuestion();
+		}
+
+		document.getElementById('file-input').addEventListener('change', handleFile, false);
+	</script>
